@@ -1,46 +1,48 @@
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, TrendingDown } from "lucide-react";
+import { TrendingUp } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
-// Mock data - vil erstattes med ekte data senere
-const mockStocks = [
-  {
-    id: 1,
-    name: "TechStart AS",
-    sector: "Teknologi",
-    price: 125.50,
-    change: 5.2,
-    logo: "https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=100&h=100&fit=crop",
-  },
-  {
-    id: 2,
-    name: "GreenEnergy Norge",
-    sector: "Fornybar energi",
-    price: 89.75,
-    change: -2.1,
-    logo: "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?w=100&h=100&fit=crop",
-  },
-  {
-    id: 3,
-    name: "HealthTech Solutions",
-    sector: "Helse",
-    price: 210.00,
-    change: 8.5,
-    logo: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=100&h=100&fit=crop",
-  },
-  {
-    id: 4,
-    name: "FinTech Innovations",
-    sector: "Finans",
-    price: 156.25,
-    change: 3.7,
-    logo: "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=100&h=100&fit=crop",
-  },
-];
+interface Stock {
+  id: string;
+  name: string;
+  sector: string;
+  price: number;
+  available_shares: number;
+  logo_url: string;
+}
 
 export const StockList = () => {
+  const [stocks, setStocks] = useState<Stock[]>([]);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchStocks();
+  }, []);
+
+  const fetchStocks = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('stocks')
+        .select('*')
+        .gt('available_shares', 0)
+        .order('created_at', { ascending: false })
+        .limit(4);
+
+      if (error) throw error;
+      setStocks(data || []);
+    } catch (error) {
+      console.error('Error fetching stocks:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <section className="py-20 px-4 bg-muted/30">
+    <section id="aksjer" className="py-20 px-4 bg-muted/30">
       <div className="container mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
@@ -52,49 +54,54 @@ export const StockList = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
-          {mockStocks.map((stock) => (
-            <Card key={stock.id} className="p-6 hover:shadow-lg transition-shadow cursor-pointer">
-              <div className="space-y-4">
-                <div className="flex items-start justify-between">
-                  <img
-                    src={stock.logo}
-                    alt={stock.name}
-                    className="h-12 w-12 rounded-lg object-cover"
-                  />
-                  <div className={`flex items-center gap-1 text-sm font-medium ${
-                    stock.change > 0 ? "text-success" : "text-destructive"
-                  }`}>
-                    {stock.change > 0 ? (
-                      <TrendingUp className="h-4 w-4" />
+          {loading ? (
+            <p className="col-span-full text-center text-muted-foreground">Laster aksjer...</p>
+          ) : stocks.length === 0 ? (
+            <p className="col-span-full text-center text-muted-foreground">Ingen aksjer tilgjengelig for øyeblikket</p>
+          ) : (
+            stocks.map((stock) => (
+              <Card key={stock.id} className="p-6 hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate('/auth')}>
+                <div className="space-y-4">
+                  <div className="flex items-start justify-between">
+                    {stock.logo_url ? (
+                      <img
+                        src={stock.logo_url}
+                        alt={stock.name}
+                        className="h-12 w-12 rounded-lg object-cover"
+                      />
                     ) : (
-                      <TrendingDown className="h-4 w-4" />
+                      <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <TrendingUp className="h-6 w-6 text-primary" />
+                      </div>
                     )}
-                    {Math.abs(stock.change)}%
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold text-lg mb-1">{stock.name}</h3>
-                  <p className="text-sm text-muted-foreground">{stock.sector}</p>
-                </div>
-
-                <div className="pt-4 border-t border-border">
-                  <div className="flex items-baseline gap-2 mb-4">
-                    <span className="text-2xl font-bold">{stock.price}</span>
-                    <span className="text-sm text-muted-foreground">NOK</span>
                   </div>
 
-                  <Button className="w-full" variant="outline">
-                    Se detaljer
-                  </Button>
+                  <div>
+                    <h3 className="font-semibold text-lg mb-1">{stock.name}</h3>
+                    <p className="text-sm text-muted-foreground">{stock.sector}</p>
+                  </div>
+
+                  <div className="pt-4 border-t border-border">
+                    <div className="flex items-baseline gap-2 mb-2">
+                      <span className="text-2xl font-bold">{Number(stock.price).toFixed(2)}</span>
+                      <span className="text-sm text-muted-foreground">NOK</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mb-4">
+                      {stock.available_shares.toLocaleString()} aksjer tilgjengelig
+                    </p>
+
+                    <Button className="w-full" variant="outline">
+                      Se detaljer
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            ))
+          )}
         </div>
 
         <div className="text-center mt-12">
-          <Button size="lg" variant="outline">
+          <Button size="lg" variant="outline" onClick={() => navigate('/auth')}>
             Se alle aksjer
           </Button>
         </div>

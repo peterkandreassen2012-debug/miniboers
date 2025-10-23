@@ -1,7 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { TrendingUp, Shield, Zap } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export const HeroSection = () => {
+  const navigate = useNavigate();
+
   return (
     <section className="pt-32 pb-20 px-4">
       <div className="container mx-auto">
@@ -21,10 +24,12 @@ export const HeroSection = () => {
           </p>
 
           <div className="flex items-center justify-center gap-4 flex-wrap">
-            <Button size="lg" className="text-base px-8">
+            <Button size="lg" className="text-base px-8" onClick={() => navigate('/auth')}>
               Kom i gang
             </Button>
-            <Button size="lg" variant="outline" className="text-base px-8">
+            <Button size="lg" variant="outline" className="text-base px-8" onClick={() => {
+              document.getElementById('aksjer')?.scrollIntoView({ behavior: 'smooth' });
+            }}>
               Se aksjer
             </Button>
           </div>
