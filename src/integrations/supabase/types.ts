@@ -14,16 +14,250 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      companies: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          owner_id: string
+          sector: string
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          owner_id: string
+          sector: string
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          owner_id?: string
+          sector?: string
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
+      investments: {
+        Row: {
+          created_at: string
+          id: string
+          investor_id: string
+          price_per_share: number
+          shares: number
+          stock_id: string
+          total_amount: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          investor_id: string
+          price_per_share: number
+          shares: number
+          stock_id: string
+          total_amount: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          investor_id?: string
+          price_per_share?: number
+          shares?: number
+          stock_id?: string
+          total_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investments_stock_id_fkey"
+            columns: ["stock_id"]
+            isOneToOne: false
+            referencedRelation: "stocks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          full_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      stock_requests: {
+        Row: {
+          company_id: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          price: number
+          reviewed_at: string | null
+          reviewed_by: string | null
+          sector: string
+          status: Database["public"]["Enums"]["request_status"]
+          symbol: string
+          total_shares: number
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          price: number
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          sector: string
+          status?: Database["public"]["Enums"]["request_status"]
+          symbol: string
+          total_shares: number
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          price?: number
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          sector?: string
+          status?: Database["public"]["Enums"]["request_status"]
+          symbol?: string
+          total_shares?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_requests_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stocks: {
+        Row: {
+          available_shares: number
+          company_id: string
+          created_at: string
+          description: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          price: number
+          sector: string
+          symbol: string
+          total_shares: number
+          updated_at: string
+        }
+        Insert: {
+          available_shares: number
+          company_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          price: number
+          sector: string
+          symbol: string
+          total_shares: number
+          updated_at?: string
+        }
+        Update: {
+          available_shares?: number
+          company_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          price?: number
+          sector?: string
+          symbol?: string
+          total_shares?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stocks_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "investor" | "company"
+      request_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +384,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "investor", "company"],
+      request_status: ["pending", "approved", "rejected"],
+    },
   },
 } as const
