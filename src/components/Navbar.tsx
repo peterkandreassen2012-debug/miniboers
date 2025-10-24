@@ -7,7 +7,7 @@ export const Navbar = () => {
   const { user } = useAuth();
 
   return (
-    <nav className="fixed top-4 left-4 right-4 z-50 bg-background/80 backdrop-blur-md border border-border/50 rounded-2xl shadow-lg">
+    <nav className="fixed top-4 left-4 right-4 z-50 bg-background/95 backdrop-blur-lg border border-border rounded-2xl shadow-xl">
       <div className="container mx-auto px-6 h-16 flex items-center justify-between">
         <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
           <span className="text-2xl font-bold text-foreground">Minibørs</span>
