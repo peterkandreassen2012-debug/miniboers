@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
 import logo from '@/assets/minibors-logo.png';
@@ -21,6 +22,7 @@ const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [role, setRole] = useState<'investor' | 'company'>('investor');
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -79,7 +81,7 @@ const Auth = () => {
       authSchema.parse({ email, password, fullName });
       setLoading(true);
 
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -91,6 +93,29 @@ const Auth = () => {
       });
 
       if (error) throw error;
+
+      // Add the selected role to user_roles table
+      if (data.user) {
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .insert({ user_id: data.user.id, role });
+
+        if (roleError) throw roleError;
+
+        // If company role, create a company entry
+        if (role === 'company') {
+          const { error: companyError } = await supabase
+            .from('companies')
+            .insert({
+              owner_id: data.user.id,
+              name: fullName || email.split('@')[0],
+              sector: 'Annet',
+              description: '',
+            });
+
+          if (companyError) throw companyError;
+        }
+      }
 
       toast({
         title: 'Registrering vellykket!',
@@ -202,6 +227,23 @@ const Auth = () => {
                   <p className="text-xs text-muted-foreground">
                     Minimum 6 tegn
                   </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-role">Velg rolle</Label>
+                  <Select value={role} onValueChange={(value: 'investor' | 'company') => setRole(value)}>
+                    <SelectTrigger id="signup-role">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="investor">Investor</SelectItem>
+                      <SelectItem value="company">Bedrift</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {role === 'company' && (
+                    <p className="text-xs text-muted-foreground">
+                      Bedrifter betaler 999 000 kr per år for å hoste aksjer
+                    </p>
+                  )}
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? 'Oppretter konto...' : 'Opprett konto'}

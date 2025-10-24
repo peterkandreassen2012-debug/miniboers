@@ -3,9 +3,13 @@ import { DashboardLayout } from './DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Check, X, Clock, TrendingUp } from 'lucide-react';
+import { Check, X, Clock, TrendingUp, Plus } from 'lucide-react';
 
 interface StockRequest {
   id: string;
@@ -27,12 +31,38 @@ const AdminDashboard = () => {
   const [requests, setRequests] = useState<StockRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ total_stocks: 0, pending_requests: 0, total_investments: 0 });
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [newStock, setNewStock] = useState({
+    name: '',
+    symbol: '',
+    price: '',
+    total_shares: '',
+    description: '',
+    sector: '',
+    company_id: '',
+  });
+  const [companies, setCompanies] = useState<{ id: string; name: string }[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchRequests();
     fetchStats();
+    fetchCompanies();
   }, []);
+
+  const fetchCompanies = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('companies')
+        .select('id, name')
+        .order('name');
+
+      if (error) throw error;
+      setCompanies(data || []);
+    } catch (error) {
+      console.error('Error fetching companies:', error);
+    }
+  };
 
   const fetchRequests = async () => {
     try {
@@ -150,6 +180,58 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleCreateStock = async () => {
+    try {
+      const price = parseFloat(newStock.price);
+      const totalShares = parseInt(newStock.total_shares);
+
+      if (!newStock.name || !newStock.symbol || !newStock.company_id || isNaN(price) || isNaN(totalShares)) {
+        toast({
+          title: 'Feil',
+          description: 'Vennligst fyll ut alle feltene korrekt.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const { error } = await supabase.from('stocks').insert({
+        company_id: newStock.company_id,
+        name: newStock.name,
+        symbol: newStock.symbol,
+        price,
+        total_shares: totalShares,
+        available_shares: totalShares,
+        description: newStock.description,
+        sector: newStock.sector,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Suksess!',
+        description: 'Aksjen er opprettet.',
+      });
+
+      setCreateDialogOpen(false);
+      setNewStock({
+        name: '',
+        symbol: '',
+        price: '',
+        total_shares: '',
+        description: '',
+        sector: '',
+        company_id: '',
+      });
+      fetchStats();
+    } catch (error: any) {
+      toast({
+        title: 'Feil',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
     <DashboardLayout title="Admin Dashboard">
       <div className="space-y-8">
@@ -174,6 +256,107 @@ const AdminDashboard = () => {
             </CardHeader>
           </Card>
         </div>
+
+        {/* Create Stock */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Opprett aksje</CardTitle>
+                <CardDescription>Lag nye aksjer direkte som admin</CardDescription>
+              </div>
+              <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Ny aksje
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Opprett ny aksje</DialogTitle>
+                    <DialogDescription>
+                      Fyll ut informasjonen for den nye aksjen
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Selskapsnavn</Label>
+                        <select
+                          className="w-full p-2 border rounded-md"
+                          value={newStock.company_id}
+                          onChange={(e) => setNewStock({ ...newStock, company_id: e.target.value })}
+                        >
+                          <option value="">Velg selskap</option>
+                          {companies.map((company) => (
+                            <option key={company.id} value={company.id}>
+                              {company.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Aksjenavn</Label>
+                        <Input
+                          value={newStock.name}
+                          onChange={(e) => setNewStock({ ...newStock, name: e.target.value })}
+                          placeholder="f.eks. MiniBørs AS"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Symbol</Label>
+                        <Input
+                          value={newStock.symbol}
+                          onChange={(e) => setNewStock({ ...newStock, symbol: e.target.value })}
+                          placeholder="f.eks. MINI"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Sektor</Label>
+                        <Input
+                          value={newStock.sector}
+                          onChange={(e) => setNewStock({ ...newStock, sector: e.target.value })}
+                          placeholder="f.eks. Teknologi"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Pris per aksje (NOK)</Label>
+                        <Input
+                          type="number"
+                          value={newStock.price}
+                          onChange={(e) => setNewStock({ ...newStock, price: e.target.value })}
+                          placeholder="100"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Antall aksjer</Label>
+                        <Input
+                          type="number"
+                          value={newStock.total_shares}
+                          onChange={(e) => setNewStock({ ...newStock, total_shares: e.target.value })}
+                          placeholder="1000"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Beskrivelse</Label>
+                      <Textarea
+                        value={newStock.description}
+                        onChange={(e) => setNewStock({ ...newStock, description: e.target.value })}
+                        placeholder="Beskriv selskapet og aksjen..."
+                        rows={4}
+                      />
+                    </div>
+                    <Button onClick={handleCreateStock} className="w-full">
+                      Opprett aksje
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </CardHeader>
+        </Card>
 
         {/* Requests */}
         <Card>

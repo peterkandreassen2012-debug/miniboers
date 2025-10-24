@@ -123,10 +123,15 @@ const CompanyDashboard = () => {
 
       const { error } = await supabase
         .from('stock_requests')
-        .insert([{
+        .insert({
           company_id: company.id,
-          ...validatedData,
-        }]);
+          name: validatedData.name,
+          symbol: validatedData.symbol,
+          price: validatedData.price,
+          total_shares: validatedData.total_shares,
+          description: validatedData.description,
+          sector: validatedData.sector,
+        });
 
       if (error) throw error;
 
