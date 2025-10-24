@@ -241,7 +241,7 @@ const Auth = () => {
                   </Select>
                   {role === 'company' && (
                     <p className="text-xs text-muted-foreground">
-                      Bedrifter betaler 999 000 kr per år for å hoste aksjer
+                      Bedrifter betaler 1500 kr per år for å hoste aksjer
                     </p>
                   )}
                 </div>

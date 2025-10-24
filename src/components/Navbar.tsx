@@ -14,12 +14,12 @@ export const Navbar = () => {
         </div>
         
         <div className="hidden md:flex items-center gap-8">
-          <a href="#aksjer" className="text-sm font-medium text-foreground hover:text-foreground/70 transition-colors">
+          <button onClick={() => navigate('/aksjer')} className="text-sm font-medium text-foreground hover:text-foreground/70 transition-colors">
             Aksjer
-          </a>
-          <a href="#hvordan" className="text-sm font-medium text-foreground hover:text-foreground/70 transition-colors">
+          </button>
+          <button onClick={() => navigate('/hvordan-virker-det')} className="text-sm font-medium text-foreground hover:text-foreground/70 transition-colors">
             Hvordan det virker
-          </a>
+          </button>
         </div>
 
         <div className="flex items-center gap-3">

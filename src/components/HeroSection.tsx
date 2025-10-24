@@ -87,7 +87,7 @@ export const HeroSection = () => {
               <h3 className="text-2xl font-semibold text-primary">For Bedrifter</h3>
               <p className="text-muted-foreground leading-relaxed">
                 Er du en bedrift som ønsker å hente inn kapital? Registrer deg som bedrift og send inn en aksjeforespørsel. 
-                <span className="font-semibold text-foreground"> Bedrifter betaler 999 000 kr per år</span> for å hoste aksjer på Minibørs.
+                <span className="font-semibold text-foreground"> Bedrifter betaler 1500 kr per år</span> for å hoste aksjer på Minibørs.
               </p>
             </div>
           </div>
