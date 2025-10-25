@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { DashboardLayout } from './DashboardLayout';
+import { CompanyApplicationForm } from './CompanyApplicationForm';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,10 +8,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Clock, Check, X } from 'lucide-react';
+import { Plus, Clock, Check, X, AlertCircle } from 'lucide-react';
 import { z } from 'zod';
 
 interface Company {
@@ -18,6 +20,15 @@ interface Company {
   name: string;
   description: string;
   sector: string;
+  approved: boolean;
+}
+
+interface CompanyApplication {
+  id: string;
+  company_name: string;
+  status: string;
+  created_at: string;
+  rejection_reason?: string;
 }
 
 interface StockRequest {
@@ -41,6 +52,7 @@ const stockRequestSchema = z.object({
 
 const CompanyDashboard = () => {
   const [company, setCompany] = useState<Company | null>(null);
+  const [application, setApplication] = useState<CompanyApplication | null>(null);
   const [requests, setRequests] = useState<StockRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -57,6 +69,7 @@ const CompanyDashboard = () => {
 
   useEffect(() => {
     fetchCompany();
+    fetchApplication();
     fetchRequests();
   }, []);
 
@@ -74,6 +87,25 @@ const CompanyDashboard = () => {
       console.error('Error fetching company:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchApplication = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('company_applications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+      setApplication(data);
+    } catch (error: any) {
+      console.error('Error fetching application:', error);
     }
   };
 
@@ -180,15 +212,62 @@ const CompanyDashboard = () => {
   if (!company) {
     return (
       <DashboardLayout title="Bedrift Dashboard">
-        <Card>
-          <CardHeader>
-            <CardTitle>Ingen bedrift registrert</CardTitle>
-            <CardDescription>
-              Du må være registrert som bedrift for å få tilgang til dette dashboardet.
-              Kontakt support for å oppgradere kontoen din.
-            </CardDescription>
-          </CardHeader>
-        </Card>
+        <div className="space-y-6">
+          {application ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Din bedriftssøknad</CardTitle>
+                <CardDescription>
+                  Status på søknaden din
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-semibold">{application.company_name}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Sendt {new Date(application.created_at).toLocaleDateString('no-NO')}
+                      </p>
+                    </div>
+                    <Badge
+                      variant={
+                        application.status === 'pending'
+                          ? 'secondary'
+                          : application.status === 'approved'
+                          ? 'default'
+                          : 'destructive'
+                      }
+                    >
+                      {application.status === 'pending' && <Clock className="h-3 w-3 mr-1" />}
+                      {application.status === 'approved' && <Check className="h-3 w-3 mr-1" />}
+                      {application.status === 'rejected' && <X className="h-3 w-3 mr-1" />}
+                      {application.status === 'pending' ? 'Venter på godkjenning' : application.status === 'approved' ? 'Godkjent' : 'Avvist'}
+                    </Badge>
+                  </div>
+                  {application.status === 'rejected' && application.rejection_reason && (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>Avslag</AlertTitle>
+                      <AlertDescription>{application.rejection_reason}</AlertDescription>
+                    </Alert>
+                  )}
+                  {application.status === 'pending' && (
+                    <Alert>
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>Venter på godkjenning</AlertTitle>
+                      <AlertDescription>
+                        Din søknad er under behandling. Du vil få beskjed når en administrator har behandlet søknaden.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <CompanyApplicationForm onApplicationSubmitted={fetchApplication} />
+          )}
+        </div>
       </DashboardLayout>
     );
   }
@@ -199,18 +278,45 @@ const CompanyDashboard = () => {
         {/* Company Info */}
         <Card>
           <CardHeader>
-            <CardTitle>{company.name}</CardTitle>
-            <CardDescription>{company.sector}</CardDescription>
+            <div className="flex items-start justify-between">
+              <div>
+                <CardTitle>{company.name}</CardTitle>
+                <CardDescription>{company.sector}</CardDescription>
+              </div>
+              <Badge variant={company.approved ? 'default' : 'secondary'}>
+                {company.approved ? (
+                  <>
+                    <Check className="h-3 w-3 mr-1" />
+                    Godkjent
+                  </>
+                ) : (
+                  <>
+                    <Clock className="h-3 w-3 mr-1" />
+                    Venter på godkjenning
+                  </>
+                )}
+              </Badge>
+            </div>
           </CardHeader>
           <CardContent>
             <p className="text-sm">{company.description}</p>
           </CardContent>
         </Card>
 
+        {!company.approved && (
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Bedriften er ikke godkjent ennå</AlertTitle>
+            <AlertDescription>
+              Du kan ikke legge til aksjer før bedriften din er godkjent av en administrator.
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* New Request Button */}
         <Dialog>
           <DialogTrigger asChild>
-            <Button size="lg" className="w-full md:w-auto">
+            <Button size="lg" className="w-full md:w-auto" disabled={!company.approved}>
               <Plus className="h-4 w-4 mr-2" />
               Legg til aksje
             </Button>

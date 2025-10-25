@@ -16,6 +16,9 @@ export type Database = {
     Tables: {
       companies: {
         Row: {
+          approved: boolean | null
+          approved_at: string | null
+          approved_by: string | null
           created_at: string
           description: string | null
           id: string
@@ -27,6 +30,9 @@ export type Database = {
           website: string | null
         }
         Insert: {
+          approved?: boolean | null
+          approved_at?: string | null
+          approved_by?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -38,6 +44,9 @@ export type Database = {
           website?: string | null
         }
         Update: {
+          approved?: boolean | null
+          approved_at?: string | null
+          approved_by?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -46,6 +55,63 @@ export type Database = {
           owner_id?: string
           sector?: string
           updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
+      company_applications: {
+        Row: {
+          company_name: string
+          contact_person: string
+          created_at: string
+          description: string
+          email: string
+          id: string
+          org_number: string | null
+          phone: string | null
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          sector: string
+          status: string
+          updated_at: string
+          user_id: string
+          website: string | null
+        }
+        Insert: {
+          company_name: string
+          contact_person: string
+          created_at?: string
+          description: string
+          email: string
+          id?: string
+          org_number?: string | null
+          phone?: string | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          sector: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          website?: string | null
+        }
+        Update: {
+          company_name?: string
+          contact_person?: string
+          created_at?: string
+          description?: string
+          email?: string
+          id?: string
+          org_number?: string | null
+          phone?: string | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          sector?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
           website?: string | null
         }
         Relationships: []

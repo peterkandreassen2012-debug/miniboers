@@ -7,9 +7,11 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { Check, X, Clock, TrendingUp, Plus } from 'lucide-react';
+import { Check, X, Clock, TrendingUp, Plus, Building2 } from 'lucide-react';
 
 interface StockRequest {
   id: string;
@@ -27,11 +29,31 @@ interface StockRequest {
   };
 }
 
+interface CompanyApplication {
+  id: string;
+  user_id: string;
+  company_name: string;
+  org_number?: string;
+  contact_person: string;
+  email: string;
+  phone?: string;
+  website?: string;
+  sector: string;
+  description: string;
+  status: string;
+  created_at: string;
+  rejection_reason?: string;
+}
+
 const AdminDashboard = () => {
   const [requests, setRequests] = useState<StockRequest[]>([]);
+  const [applications, setApplications] = useState<CompanyApplication[]>([]);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({ total_stocks: 0, pending_requests: 0, total_investments: 0 });
+  const [stats, setStats] = useState({ total_stocks: 0, pending_requests: 0, total_investments: 0, pending_applications: 0 });
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [selectedApplication, setSelectedApplication] = useState<string | null>(null);
+  const [rejectionReason, setRejectionReason] = useState('');
   const [newStock, setNewStock] = useState({
     name: '',
     symbol: '',
@@ -42,10 +64,12 @@ const AdminDashboard = () => {
     company_id: '',
   });
   const [companies, setCompanies] = useState<{ id: string; name: string }[]>([]);
+  const { user } = useAuth();
   const { toast } = useToast();
 
   useEffect(() => {
     fetchRequests();
+    fetchApplications();
     fetchStats();
     fetchCompanies();
   }, []);
@@ -89,18 +113,38 @@ const AdminDashboard = () => {
     }
   };
 
+  const fetchApplications = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('company_applications')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setApplications(data || []);
+    } catch (error: any) {
+      toast({
+        title: 'Feil',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
   const fetchStats = async () => {
     try {
-      const [stocksRes, requestsRes, investmentsRes] = await Promise.all([
+      const [stocksRes, requestsRes, investmentsRes, applicationsRes] = await Promise.all([
         supabase.from('stocks').select('id', { count: 'exact', head: true }),
         supabase.from('stock_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
         supabase.from('investments').select('id', { count: 'exact', head: true }),
+        supabase.from('company_applications').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
       ]);
 
       setStats({
         total_stocks: stocksRes.count || 0,
         pending_requests: requestsRes.count || 0,
         total_investments: investmentsRes.count || 0,
+        pending_applications: applicationsRes.count || 0,
       });
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -180,6 +224,108 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleApproveApplication = async (application: CompanyApplication) => {
+    try {
+      // Create or update company
+      const { data: existingCompany } = await supabase
+        .from('companies')
+        .select('id')
+        .eq('owner_id', application.user_id)
+        .single();
+
+      if (existingCompany) {
+        // Update existing company to approved
+        const { error: updateError } = await supabase
+          .from('companies')
+          .update({
+            approved: true,
+            approved_at: new Date().toISOString(),
+            approved_by: user!.id,
+          })
+          .eq('id', existingCompany.id);
+
+        if (updateError) throw updateError;
+      } else {
+        // Create new company
+        const { error: companyError } = await supabase
+          .from('companies')
+          .insert({
+            owner_id: application.user_id,
+            name: application.company_name,
+            sector: application.sector,
+            description: application.description,
+            website: application.website,
+            approved: true,
+            approved_at: new Date().toISOString(),
+            approved_by: user!.id,
+          } as any);
+
+        if (companyError) throw companyError;
+      }
+
+      // Update application status
+      const { error: appError } = await supabase
+        .from('company_applications')
+        .update({
+          status: 'approved',
+          reviewed_at: new Date().toISOString(),
+          reviewed_by: user!.id,
+        } as any)
+        .eq('id', application.id);
+
+      if (appError) throw appError;
+
+      toast({
+        title: 'Godkjent!',
+        description: `${application.company_name} er nå godkjent.`,
+      });
+
+      fetchApplications();
+      fetchStats();
+    } catch (error: any) {
+      toast({
+        title: 'Feil',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleRejectApplication = async () => {
+    if (!selectedApplication || !rejectionReason) return;
+
+    try {
+      const { error } = await supabase
+        .from('company_applications')
+        .update({
+          status: 'rejected',
+          reviewed_at: new Date().toISOString(),
+          reviewed_by: user!.id,
+          rejection_reason: rejectionReason,
+        } as any)
+        .eq('id', selectedApplication);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Avvist',
+        description: 'Søknaden er avvist.',
+      });
+
+      setRejectDialogOpen(false);
+      setSelectedApplication(null);
+      setRejectionReason('');
+      fetchApplications();
+      fetchStats();
+    } catch (error: any) {
+      toast({
+        title: 'Feil',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleCreateStock = async () => {
     try {
       const price = parseFloat(newStock.price);
@@ -236,7 +382,7 @@ const AdminDashboard = () => {
     <DashboardLayout title="Admin Dashboard">
       <div className="space-y-8">
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <Card>
             <CardHeader>
               <CardTitle className="text-2xl">{stats.total_stocks}</CardTitle>
@@ -246,7 +392,13 @@ const AdminDashboard = () => {
           <Card>
             <CardHeader>
               <CardTitle className="text-2xl">{stats.pending_requests}</CardTitle>
-              <CardDescription>Ventende forespørsler</CardDescription>
+              <CardDescription>Ventende aksjeforespørsler</CardDescription>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-2xl">{stats.pending_applications}</CardTitle>
+              <CardDescription>Ventende bedriftssøknader</CardDescription>
             </CardHeader>
           </Card>
           <Card>
@@ -257,8 +409,115 @@ const AdminDashboard = () => {
           </Card>
         </div>
 
-        {/* Create Stock */}
-        <Card>
+        {/* Tabs for different sections */}
+        <Tabs defaultValue="applications" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="applications">
+              <Building2 className="h-4 w-4 mr-2" />
+              Bedriftssøknader
+            </TabsTrigger>
+            <TabsTrigger value="stocks">
+              <TrendingUp className="h-4 w-4 mr-2" />
+              Aksjeforespørsler
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Company Applications Tab */}
+          <TabsContent value="applications" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Bedriftssøknader</CardTitle>
+                <CardDescription>
+                  Behandle søknader fra bedrifter om å bli godkjent på plattformen
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <p className="text-muted-foreground">Laster...</p>
+                ) : applications.length === 0 ? (
+                  <p className="text-muted-foreground">Ingen søknader ennå</p>
+                ) : (
+                  <div className="space-y-4">
+                    {applications.map((application) => (
+                      <div
+                        key={application.id}
+                        className="p-4 border border-border rounded-lg space-y-3"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h3 className="font-semibold text-lg">{application.company_name}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              {application.sector} • Kontakt: {application.contact_person}
+                            </p>
+                            {application.org_number && (
+                              <p className="text-sm text-muted-foreground">Org.nr: {application.org_number}</p>
+                            )}
+                          </div>
+                          <Badge
+                            variant={
+                              application.status === 'pending'
+                                ? 'secondary'
+                                : application.status === 'approved'
+                                ? 'default'
+                                : 'destructive'
+                            }
+                          >
+                            {application.status === 'pending' && <Clock className="h-3 w-3 mr-1" />}
+                            {application.status === 'approved' && <Check className="h-3 w-3 mr-1" />}
+                            {application.status === 'rejected' && <X className="h-3 w-3 mr-1" />}
+                            {application.status === 'pending' ? 'Venter' : application.status === 'approved' ? 'Godkjent' : 'Avvist'}
+                          </Badge>
+                        </div>
+
+                        <div className="space-y-2">
+                          <p className="text-sm">{application.description}</p>
+                          <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                            <span>📧 {application.email}</span>
+                            {application.phone && <span>📞 {application.phone}</span>}
+                            {application.website && (
+                              <a href={application.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                                🌐 Nettside
+                              </a>
+                            )}
+                          </div>
+                        </div>
+
+                        {application.status === 'pending' && (
+                          <div className="flex gap-2 pt-2">
+                            <Button
+                              onClick={() => handleApproveApplication(application)}
+                              size="sm"
+                              className="flex-1"
+                            >
+                              <Check className="h-4 w-4 mr-2" />
+                              Godkjenn
+                            </Button>
+                            <Button
+                              onClick={() => {
+                                setSelectedApplication(application.id);
+                                setRejectDialogOpen(true);
+                              }}
+                              size="sm"
+                              variant="outline"
+                              className="flex-1"
+                            >
+                              <X className="h-4 w-4 mr-2" />
+                              Avvis
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Stock Requests Tab */}
+          <TabsContent value="stocks" className="space-y-4">
+            {/* Create Stock */}
+            <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -440,6 +699,53 @@ const AdminDashboard = () => {
             )}
           </CardContent>
         </Card>
+          </TabsContent>
+        </Tabs>
+
+        {/* Rejection Dialog */}
+        <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Avvis bedriftssøknad</DialogTitle>
+              <DialogDescription>
+                Skriv en begrunnelse for hvorfor søknaden avvises
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="rejection-reason">Begrunnelse</Label>
+                <Textarea
+                  id="rejection-reason"
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  placeholder="Beskriv hvorfor søknaden avvises..."
+                  rows={4}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleRejectApplication}
+                  disabled={!rejectionReason}
+                  variant="destructive"
+                  className="flex-1"
+                >
+                  Avvis søknad
+                </Button>
+                <Button
+                  onClick={() => {
+                    setRejectDialogOpen(false);
+                    setSelectedApplication(null);
+                    setRejectionReason('');
+                  }}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Avbryt
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );
