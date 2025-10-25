@@ -248,9 +248,6 @@ const Auth = () => {
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? 'Oppretter konto...' : 'Opprett konto'}
                 </Button>
-                <p className="text-xs text-muted-foreground text-center mt-2">
-                  Du vil få tilsendt en 6-sifret PIN-kode for identitetsverifisering
-                </p>
               </form>
             </TabsContent>
           </Tabs>

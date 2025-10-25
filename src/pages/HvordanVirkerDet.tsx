@@ -55,14 +55,6 @@ const HvordanVirkerDet = () => {
                   </div>
                 </div>
               </div>
-              <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
-                <p className="text-sm font-semibold text-primary">
-                  Gebyr: 49 kr per kjøp
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Betales ved hver aksjetransaksjon
-                </p>
-              </div>
               <Button size="lg" className="w-full" onClick={() => navigate('/auth')}>
                 Bli investor
               </Button>
