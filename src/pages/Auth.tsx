@@ -128,28 +128,8 @@ const Auth = () => {
 
       if (error) throw error;
 
-      // Add the selected role to user_roles table
-      if (data.user) {
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .insert({ user_id: data.user.id, role });
-
-        if (roleError) throw roleError;
-
-        // If company role, create a company entry
-        if (role === 'company') {
-          const { error: companyError } = await supabase
-            .from('companies')
-            .insert({
-              owner_id: data.user.id,
-              name: fullName || email.split('@')[0],
-              sector: 'Annet',
-              description: '',
-            });
-
-          if (companyError) throw companyError;
-        }
-      }
+      // The handle_new_user trigger automatically assigns 'investor' role
+      // Users who want to be companies must apply through the company application process
 
       toast({
         title: 'Registrering vellykket!',
@@ -380,22 +360,11 @@ const Auth = () => {
                       Minimum 6 tegn (kan være tall eller bokstaver)
                     </p>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-role">Velg rolle</Label>
-                    <Select value={role} onValueChange={(value: 'investor' | 'company') => setRole(value)}>
-                      <SelectTrigger id="signup-role">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="investor">Investor</SelectItem>
-                        <SelectItem value="company">Bedrift</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {role === 'company' && (
-                      <p className="text-xs text-muted-foreground">
-                        Bedrifter betaler 1500 kr per år for å hoste aksjer
-                      </p>
-                    )}
+                  <div className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">
+                    <p>
+                      <strong>For bedrifter:</strong> Alle nye kontoer registreres som investor. 
+                      Hvis du ønsker å liste aksjer for din bedrift, kan du søke om bedriftskonto etter registrering.
+                    </p>
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? 'Oppretter konto...' : 'Opprett konto'}

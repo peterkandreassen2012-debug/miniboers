@@ -295,6 +295,19 @@ const AdminDashboard = () => {
         if (companyError) throw companyError;
       }
 
+      // Assign company role to user
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: application.user_id,
+          role: 'company'
+        });
+
+      // Ignore duplicate key errors (user already has company role)
+      if (roleError && !roleError.message.includes('duplicate')) {
+        console.error('Role assignment error:', roleError);
+      }
+
       // Update application status
       const { error: appError } = await supabase
         .from('company_applications')
