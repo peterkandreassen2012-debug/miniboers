@@ -8,10 +8,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { Check, X, Clock, TrendingUp, Plus, Building2 } from 'lucide-react';
+import { Check, X, Clock, TrendingUp, Plus, Building2, AlertCircle } from 'lucide-react';
 import { z } from 'zod';
 
 const stockSchema = z.object({
@@ -55,6 +56,7 @@ interface CompanyApplication {
   status: string;
   created_at: string;
   rejection_reason?: string;
+  complaint_count?: number;
 }
 
 const AdminDashboard = () => {
@@ -137,11 +139,21 @@ const AdminDashboard = () => {
     try {
       const { data, error } = await supabase
         .from('company_applications')
-        .select('*')
+        .select(`
+          *,
+          complaint_count:application_complaints(count)
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setApplications(data || []);
+      
+      // Transform the data to include complaint count
+      const transformedData = data?.map(app => ({
+        ...app,
+        complaint_count: app.complaint_count?.[0]?.count || 0
+      })) || [];
+      
+      setApplications(transformedData);
     } catch (error: any) {
       toast({
         title: 'Feil',
@@ -684,6 +696,15 @@ const AdminDashboard = () => {
                               </a>
                             )}
                           </div>
+                          {application.status === 'rejected' && application.complaint_count && application.complaint_count > 0 && (
+                            <Alert>
+                              <AlertCircle className="h-4 w-4" />
+                              <AlertTitle>Klage mottatt</AlertTitle>
+                              <AlertDescription>
+                                Bedriften har sendt inn {application.complaint_count} klage{application.complaint_count > 1 ? 'r' : ''} på avslaget.
+                              </AlertDescription>
+                            </Alert>
+                          )}
                         </div>
 
                         {application.status === 'pending' && (

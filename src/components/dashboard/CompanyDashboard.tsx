@@ -255,11 +255,29 @@ const CompanyDashboard = () => {
                       <Button 
                         variant="outline" 
                         size="sm"
-                        onClick={() => {
-                          toast({
-                            title: 'Klage sendt',
-                            description: 'Din klage er sendt til administrator for behandling.',
-                          });
+                        onClick={async () => {
+                          try {
+                            const { error } = await supabase
+                              .from('application_complaints')
+                              .insert({
+                                application_id: application.id,
+                                user_id: user!.id,
+                                message: `Klage på avvist søknad: ${application.company_name}`
+                              });
+
+                            if (error) throw error;
+
+                            toast({
+                              title: 'Klage sendt',
+                              description: 'Din klage er sendt til administrator for behandling.',
+                            });
+                          } catch (error: any) {
+                            toast({
+                              title: 'Feil',
+                              description: error.message,
+                              variant: 'destructive',
+                            });
+                          }
                         }}
                       >
                         Klage på avslag
