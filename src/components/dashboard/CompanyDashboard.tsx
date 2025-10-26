@@ -246,11 +246,25 @@ const CompanyDashboard = () => {
                     </Badge>
                   </div>
                   {application.status === 'rejected' && application.rejection_reason && (
-                    <Alert variant="destructive">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertTitle>Avslag</AlertTitle>
-                      <AlertDescription>{application.rejection_reason}</AlertDescription>
-                    </Alert>
+                    <div className="space-y-3">
+                      <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>Avslag</AlertTitle>
+                        <AlertDescription>{application.rejection_reason}</AlertDescription>
+                      </Alert>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          toast({
+                            title: 'Klage sendt',
+                            description: 'Din klage er sendt til administrator for behandling.',
+                          });
+                        }}
+                      >
+                        Klage på avslag
+                      </Button>
+                    </div>
                   )}
                   {application.status === 'pending' && (
                     <Alert>

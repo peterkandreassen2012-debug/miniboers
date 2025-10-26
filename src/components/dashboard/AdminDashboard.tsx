@@ -63,6 +63,7 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ total_stocks: 0, pending_requests: 0, total_investments: 0, pending_applications: 0 });
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [createCompanyDialogOpen, setCreateCompanyDialogOpen] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
@@ -74,6 +75,13 @@ const AdminDashboard = () => {
     description: '',
     sector: '',
     company_id: '',
+  });
+  const [newCompany, setNewCompany] = useState({
+    name: '',
+    sector: '',
+    description: '',
+    website: '',
+    owner_email: '',
   });
   const [companies, setCompanies] = useState<{ id: string; name: string }[]>([]);
   const { user } = useAuth();
@@ -426,6 +434,76 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleCreateCompany = async () => {
+    try {
+      // Find user by email
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', newCompany.owner_email)
+        .single();
+
+      if (profileError || !profile) {
+        toast({
+          title: 'Feil',
+          description: 'Fant ikke bruker med denne e-postadressen.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Create company
+      const { error: companyError } = await supabase
+        .from('companies')
+        .insert({
+          owner_id: profile.id,
+          name: newCompany.name,
+          sector: newCompany.sector,
+          description: newCompany.description,
+          website: newCompany.website,
+          approved: true,
+          approved_at: new Date().toISOString(),
+          approved_by: user!.id,
+        } as any);
+
+      if (companyError) throw companyError;
+
+      // Assign company role to user
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: profile.id,
+          role: 'company'
+        });
+
+      if (roleError && !roleError.message.includes('duplicate')) {
+        console.error('Role assignment error:', roleError);
+      }
+
+      toast({
+        title: 'Suksess!',
+        description: 'Bedriftsprofil opprettet.',
+      });
+
+      setCreateCompanyDialogOpen(false);
+      setNewCompany({
+        name: '',
+        sector: '',
+        description: '',
+        website: '',
+        owner_email: '',
+      });
+      fetchCompanies();
+      fetchStats();
+    } catch (error: any) {
+      toast({
+        title: 'Feil',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
     <DashboardLayout title="Admin Dashboard">
       <div className="space-y-8">
@@ -472,6 +550,84 @@ const AdminDashboard = () => {
 
           {/* Company Applications Tab */}
           <TabsContent value="applications" className="space-y-4">
+            {/* Create Company Profile */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Opprett bedriftsprofil</CardTitle>
+                    <CardDescription>Opprett en godkjent bedriftsprofil direkte</CardDescription>
+                  </div>
+                  <Dialog open={createCompanyDialogOpen} onOpenChange={setCreateCompanyDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Ny bedrift
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-2xl">
+                      <DialogHeader>
+                        <DialogTitle>Opprett ny bedriftsprofil</DialogTitle>
+                        <DialogDescription>
+                          Opprett en godkjent bedriftsprofil for en eksisterende bruker
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label>E-postadresse til eier</Label>
+                          <Input
+                            type="email"
+                            value={newCompany.owner_email}
+                            onChange={(e) => setNewCompany({ ...newCompany, owner_email: e.target.value })}
+                            placeholder="eier@bedrift.no"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Brukeren må allerede være registrert i systemet
+                          </p>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Bedriftsnavn</Label>
+                          <Input
+                            value={newCompany.name}
+                            onChange={(e) => setNewCompany({ ...newCompany, name: e.target.value })}
+                            placeholder="MiniBørs AS"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Sektor</Label>
+                          <Input
+                            value={newCompany.sector}
+                            onChange={(e) => setNewCompany({ ...newCompany, sector: e.target.value })}
+                            placeholder="Teknologi, Finans, etc."
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Nettside (valgfritt)</Label>
+                          <Input
+                            value={newCompany.website}
+                            onChange={(e) => setNewCompany({ ...newCompany, website: e.target.value })}
+                            placeholder="https://bedrift.no"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Beskrivelse</Label>
+                          <Textarea
+                            value={newCompany.description}
+                            onChange={(e) => setNewCompany({ ...newCompany, description: e.target.value })}
+                            placeholder="Beskriv bedriften..."
+                            rows={4}
+                          />
+                        </div>
+                        <Button onClick={handleCreateCompany} className="w-full">
+                          Opprett bedriftsprofil
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </CardHeader>
+            </Card>
+
             <Card>
               <CardHeader>
                 <CardTitle>Bedriftssøknader</CardTitle>
