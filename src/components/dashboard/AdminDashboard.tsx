@@ -12,6 +12,18 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Check, X, Clock, TrendingUp, Plus, Building2 } from 'lucide-react';
+import { z } from 'zod';
+
+const stockSchema = z.object({
+  name: z.string().trim().min(2, 'Navn må være minst 2 tegn').max(100, 'Navn kan ikke være mer enn 100 tegn'),
+  symbol: z.string().trim().min(1, 'Symbol er påkrevd').max(10, 'Symbol kan ikke være mer enn 10 tegn').regex(/^[A-Z0-9]+$/, 'Symbol må kun inneholde store bokstaver og tall'),
+  price: z.number().positive('Pris må være positiv').max(1000000, 'Pris kan ikke overstige 1,000,000'),
+  total_shares: z.number().int('Antall aksjer må være et heltall').positive('Antall aksjer må være positivt').max(1000000000, 'Antall aksjer kan ikke overstige 1,000,000,000'),
+  available_shares: z.number().int().positive().max(1000000000),
+  description: z.string().trim().max(2000, 'Beskrivelse kan ikke være mer enn 2000 tegn').optional(),
+  sector: z.string().trim().min(2, 'Sektor må være minst 2 tegn').max(50, 'Sektor kan ikke være mer enn 50 tegn'),
+  company_id: z.string().uuid('Ugyldig selskap ID')
+});
 
 interface StockRequest {
   id: string;
@@ -331,24 +343,52 @@ const AdminDashboard = () => {
       const price = parseFloat(newStock.price);
       const totalShares = parseInt(newStock.total_shares);
 
-      if (!newStock.name || !newStock.symbol || !newStock.company_id || isNaN(price) || isNaN(totalShares)) {
+      // Validate input data with zod schema
+      const validatedData = stockSchema.parse({
+        name: newStock.name,
+        symbol: newStock.symbol.toUpperCase(),
+        price,
+        total_shares: totalShares,
+        available_shares: totalShares,
+        description: newStock.description || undefined,
+        sector: newStock.sector,
+        company_id: newStock.company_id
+      });
+
+      // Verify company exists and is approved
+      const { data: company, error: companyError } = await supabase
+        .from('companies')
+        .select('id, approved')
+        .eq('id', validatedData.company_id)
+        .single();
+
+      if (companyError || !company) {
         toast({
           title: 'Feil',
-          description: 'Vennligst fyll ut alle feltene korrekt.',
+          description: 'Ugyldig selskap valgt.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      if (!company.approved) {
+        toast({
+          title: 'Feil',
+          description: 'Selskapet må være godkjent før aksjer kan opprettes.',
           variant: 'destructive',
         });
         return;
       }
 
       const { error } = await supabase.from('stocks').insert({
-        company_id: newStock.company_id,
-        name: newStock.name,
-        symbol: newStock.symbol,
-        price,
-        total_shares: totalShares,
-        available_shares: totalShares,
-        description: newStock.description,
-        sector: newStock.sector,
+        company_id: validatedData.company_id,
+        name: validatedData.name,
+        symbol: validatedData.symbol,
+        price: validatedData.price,
+        total_shares: validatedData.total_shares,
+        available_shares: validatedData.available_shares,
+        description: validatedData.description,
+        sector: validatedData.sector,
       });
 
       if (error) throw error;
@@ -370,11 +410,19 @@ const AdminDashboard = () => {
       });
       fetchStats();
     } catch (error: any) {
-      toast({
-        title: 'Feil',
-        description: error.message,
-        variant: 'destructive',
-      });
+      if (error instanceof z.ZodError) {
+        toast({
+          title: 'Valideringsfeil',
+          description: error.errors[0].message,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Feil',
+          description: error.message,
+          variant: 'destructive',
+        });
+      }
     }
   };
 
