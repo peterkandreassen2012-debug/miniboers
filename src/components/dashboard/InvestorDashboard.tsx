@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
 import { DashboardLayout } from './DashboardLayout';
+import { CompanyApplicationForm } from './CompanyApplicationForm';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { TrendingUp, Wallet, BarChart3 } from 'lucide-react';
+import { TrendingUp, Briefcase, AlertCircle } from 'lucide-react';
 
 interface Stock {
   id: string;
@@ -40,12 +42,15 @@ const InvestorDashboard = () => {
   const [shares, setShares] = useState('');
   const [loading, setLoading] = useState(true);
   const [investing, setInvesting] = useState(false);
+  const [showApplicationForm, setShowApplicationForm] = useState(false);
+  const [hasApplication, setHasApplication] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
 
   useEffect(() => {
     fetchStocks();
     fetchInvestments();
+    checkApplicationStatus();
   }, []);
 
   const fetchStocks = async () => {
@@ -91,6 +96,25 @@ const InvestorDashboard = () => {
         description: error.message,
         variant: 'destructive',
       });
+    }
+  };
+
+  const checkApplicationStatus = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('company_applications')
+        .select('id')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+      setHasApplication(!!data);
+    } catch (error: any) {
+      console.error('Error checking application:', error);
     }
   };
 
@@ -158,9 +182,52 @@ const InvestorDashboard = () => {
 
   return (
     <DashboardLayout title="Investor Dashboard">
-      <div className="space-y-8">
+      <div className="space-y-6 md:space-y-8">
+        {/* Company Application Section */}
+        {!hasApplication && (
+          <Alert className="border-primary/50 bg-primary/5">
+            <Briefcase className="h-4 w-4" />
+            <AlertTitle>Har du en bedrift?</AlertTitle>
+            <AlertDescription className="mt-2 space-y-3">
+              <p>Ønsker du å liste aksjer for din bedrift? Send inn en søknad for bedriftskonto.</p>
+              <Button 
+                size="sm" 
+                variant="default"
+                onClick={() => setShowApplicationForm(!showApplicationForm)}
+                className="mt-2"
+              >
+                <Briefcase className="h-4 w-4 mr-2" />
+                {showApplicationForm ? 'Skjul søknadsskjema' : 'Søk om bedriftskonto'}
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {showApplicationForm && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Søknad om bedriftskonto</CardTitle>
+              <CardDescription>
+                Fyll ut informasjonen nedenfor for å søke om å liste aksjer for din bedrift
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <CompanyApplicationForm 
+                onApplicationSubmitted={() => {
+                  setShowApplicationForm(false);
+                  setHasApplication(true);
+                  toast({
+                    title: 'Søknad sendt!',
+                    description: 'Din søknad er sendt til admin for godkjenning.',
+                  });
+                }} 
+              />
+            </CardContent>
+          </Card>
+        )}
+
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
           <Card>
             <CardHeader>
               <CardTitle className="text-2xl">{investments.length}</CardTitle>
@@ -228,11 +295,16 @@ const InvestorDashboard = () => {
             ) : stocks.length === 0 ? (
               <p className="text-muted-foreground">Ingen tilgjengelige aksjer for øyeblikket</p>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                style={{ 
+                  scrollSnapType: 'x mandatory',
+                  WebkitOverflowScrolling: 'touch'
+                }}
+              >
                 {stocks.map((stock) => (
                   <div
                     key={stock.id}
-                    className="p-4 border border-border rounded-lg space-y-3"
+                    className="p-4 border border-border rounded-lg space-y-3 hover:border-primary/50 transition-colors touch-manipulation"
                   >
                     <div>
                       <h3 className="font-semibold text-lg">{stock.name}</h3>
