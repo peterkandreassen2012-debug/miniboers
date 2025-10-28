@@ -14,8 +14,8 @@ const Dashboard = () => {
     if (!loading && !user) {
       navigate('/auth');
     } else if (!loading && user && role === 'investor') {
-      // Investors should see the stocks page instead of dashboard
-      navigate('/aksjer');
+      // Investors should see their portfolio instead of dashboard
+      navigate('/portfolio');
     }
   }, [user, role, loading, navigate]);
 

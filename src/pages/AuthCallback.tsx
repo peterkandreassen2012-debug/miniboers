@@ -21,13 +21,13 @@ const AuthCallback = () => {
 
           // Redirect based on role
           if (roleData?.role === 'investor') {
-            navigate('/aksjer');
+            navigate('/portfolio');
           } else if (roleData?.role === 'company') {
             navigate('/dashboard');
           } else if (roleData?.role === 'admin') {
             navigate('/dashboard');
           } else {
-            navigate('/aksjer');
+            navigate('/portfolio');
           }
         } else {
           navigate('/auth');

@@ -22,8 +22,13 @@ export const Navbar = () => {
         
         <div className="hidden md:flex items-center gap-8">
           <button onClick={() => navigate('/aksjer')} className="text-sm font-medium text-foreground hover:text-foreground/70 transition-colors">
-            Aksjer
+            Markedsplass
           </button>
+          {user && (
+            <button onClick={() => navigate('/portfolio')} className="text-sm font-medium text-foreground hover:text-foreground/70 transition-colors">
+              Portefølje
+            </button>
+          )}
           <button onClick={() => navigate('/hvordan-virker-det')} className="text-sm font-medium text-foreground hover:text-foreground/70 transition-colors">
             Hvordan det virker
           </button>
@@ -61,8 +66,19 @@ export const Navbar = () => {
                   }} 
                   className="text-lg font-medium text-foreground hover:text-primary transition-colors text-left py-3 touch-manipulation"
                 >
-                  Aksjer
+                  Markedsplass
                 </button>
+                {user && (
+                  <button 
+                    onClick={() => {
+                      navigate('/portfolio');
+                      setIsOpen(false);
+                    }} 
+                    className="text-lg font-medium text-foreground hover:text-primary transition-colors text-left py-3 touch-manipulation"
+                  >
+                    Portefølje
+                  </button>
+                )}
                 <button 
                   onClick={() => {
                     navigate('/hvordan-virker-det');
@@ -72,7 +88,17 @@ export const Navbar = () => {
                 >
                   Hvordan det virker
                 </button>
-                {!user && (
+                {user ? (
+                  <button 
+                    onClick={() => {
+                      navigate('/dashboard');
+                      setIsOpen(false);
+                    }} 
+                    className="text-lg font-medium text-foreground hover:text-primary transition-colors text-left py-3 touch-manipulation"
+                  >
+                    Dashboard
+                  </button>
+                ) : (
                   <button 
                     onClick={() => {
                       navigate('/auth');

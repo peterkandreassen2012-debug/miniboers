@@ -1,13 +1,10 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { TrendingUp, ShoppingCart } from "lucide-react";
+import { TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 interface Stock {
   id: string;
@@ -22,11 +19,8 @@ interface Stock {
 export const StockListWithPurchase = () => {
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedStock, setSelectedStock] = useState<Stock | null>(null);
-  const [shares, setShares] = useState<number>(1);
-  const [purchasing, setPurchasing] = useState(false);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchStocks();
@@ -54,64 +48,6 @@ export const StockListWithPurchase = () => {
     }
   };
 
-  const handlePurchase = async () => {
-    if (!selectedStock || !user) return;
-
-    if (shares <= 0 || shares > selectedStock.available_shares) {
-      toast({
-        title: 'Ugyldig antall',
-        description: `Vennligst velg mellom 1 og ${selectedStock.available_shares} aksjer`,
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setPurchasing(true);
-
-    try {
-      const totalAmount = shares * Number(selectedStock.price);
-
-      // Insert investment
-      const { error: investmentError } = await supabase
-        .from('investments')
-        .insert({
-          investor_id: user.id,
-          stock_id: selectedStock.id,
-          shares,
-          price_per_share: selectedStock.price,
-          total_amount: totalAmount,
-        });
-
-      if (investmentError) throw investmentError;
-
-      // Update stock available shares
-      const { error: updateError } = await supabase
-        .from('stocks')
-        .update({ available_shares: selectedStock.available_shares - shares })
-        .eq('id', selectedStock.id);
-
-      if (updateError) throw updateError;
-
-      toast({
-        title: 'Kjøp vellykket!',
-        description: `Du har kjøpt ${shares} aksjer i ${selectedStock.name}`,
-      });
-
-      setSelectedStock(null);
-      setShares(1);
-      fetchStocks();
-    } catch (error: any) {
-      toast({
-        title: 'Kjøp feilet',
-        description: error.message || 'Kunne ikke gjennomføre kjøpet',
-        variant: 'destructive',
-      });
-    } finally {
-      setPurchasing(false);
-    }
-  };
-
-  const totalCost = selectedStock ? shares * Number(selectedStock.price) : 0;
 
   return (
     <>
@@ -157,11 +93,9 @@ export const StockListWithPurchase = () => {
 
                   <Button 
                     className="w-full touch-manipulation" 
-                    onClick={() => setSelectedStock(stock)}
-                    disabled={!user}
+                    onClick={() => navigate(`/aksje/${stock.id}`)}
                   >
-                    <ShoppingCart className="h-4 w-4 mr-2" />
-                    Kjøp aksjer
+                    Se detaljer
                   </Button>
                 </div>
               </div>
@@ -170,58 +104,6 @@ export const StockListWithPurchase = () => {
         )}
       </div>
 
-      <Dialog open={!!selectedStock} onOpenChange={() => setSelectedStock(null)}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Kjøp aksjer i {selectedStock?.name}</DialogTitle>
-            <DialogDescription>
-              Velg antall aksjer du ønsker å kjøpe
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="shares">Antall aksjer</Label>
-              <Input
-                id="shares"
-                type="number"
-                min={1}
-                max={selectedStock?.available_shares}
-                value={shares}
-                onChange={(e) => setShares(parseInt(e.target.value) || 1)}
-              />
-              <p className="text-xs text-muted-foreground">
-                Maks: {selectedStock?.available_shares} aksjer
-              </p>
-            </div>
-
-            <div className="rounded-lg bg-muted p-4 space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Pris per aksje:</span>
-                <span className="font-medium">{selectedStock && Number(selectedStock.price).toFixed(2)} NOK</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Antall aksjer:</span>
-                <span className="font-medium">{shares}</span>
-              </div>
-              <div className="h-px bg-border my-2" />
-              <div className="flex justify-between">
-                <span className="font-semibold">Totalt:</span>
-                <span className="font-bold text-lg">{totalCost.toFixed(2)} NOK</span>
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setSelectedStock(null)} disabled={purchasing}>
-              Avbryt
-            </Button>
-            <Button onClick={handlePurchase} disabled={purchasing}>
-              {purchasing ? 'Behandler...' : 'Bekreft kjøp'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </>
   );
 };

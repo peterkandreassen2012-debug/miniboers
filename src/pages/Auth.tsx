@@ -96,7 +96,7 @@ const Auth = () => {
       });
 
       if (roleData?.role === 'investor') {
-        navigate('/aksjer');
+        navigate('/portfolio');
       } else {
         navigate('/dashboard');
       }
@@ -147,8 +147,8 @@ const Auth = () => {
         description: 'Du er nå logget inn.',
       });
 
-      // New users are investors by default, redirect to stocks page
-      navigate('/aksjer');
+      // New users are investors by default, redirect to portfolio page
+      navigate('/portfolio');
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         toast({

@@ -9,6 +9,8 @@ import Auth from "./pages/Auth";
 import AuthCallback from "./pages/AuthCallback";
 import Dashboard from "./pages/Dashboard";
 import Aksjer from "./pages/Aksjer";
+import Portfolio from "./pages/Portfolio";
+import StockDetail from "./pages/StockDetail";
 import HvordanVirkerDet from "./pages/HvordanVirkerDet";
 import NotFound from "./pages/NotFound";
 
@@ -27,6 +29,8 @@ const App = () => (
             <Route path="/auth-callback" element={<AuthCallback />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/aksjer" element={<Aksjer />} />
+            <Route path="/portfolio" element={<Portfolio />} />
+            <Route path="/aksje/:id" element={<StockDetail />} />
             <Route path="/hvordan-virker-det" element={<HvordanVirkerDet />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
