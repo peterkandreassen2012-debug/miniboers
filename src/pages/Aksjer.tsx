@@ -1,5 +1,5 @@
 import { Navbar } from "@/components/Navbar";
-import { StockList } from "@/components/StockList";
+import { StockListWithPurchase } from "@/components/StockListWithPurchase";
 
 const Aksjer = () => {
   return (
@@ -15,7 +15,7 @@ const Aksjer = () => {
               Utforsk og invester i lovende norske bedrifter
             </p>
           </div>
-          <StockList />
+          <StockListWithPurchase />
         </div>
       </div>
     </div>

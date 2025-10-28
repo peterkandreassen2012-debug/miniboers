@@ -13,8 +13,11 @@ const Dashboard = () => {
   useEffect(() => {
     if (!loading && !user) {
       navigate('/auth');
+    } else if (!loading && user && role === 'investor') {
+      // Investors should see the stocks page instead of dashboard
+      navigate('/aksjer');
     }
-  }, [user, loading, navigate]);
+  }, [user, role, loading, navigate]);
 
   if (loading) {
     return (

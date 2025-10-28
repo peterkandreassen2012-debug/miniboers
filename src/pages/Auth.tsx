@@ -47,7 +47,7 @@ const Auth = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/dashboard`,
+          redirectTo: `${window.location.origin}/auth-callback`,
         },
       });
 
@@ -83,12 +83,23 @@ const Auth = () => {
 
       if (error) throw error;
 
+      // Fetch user role to redirect appropriately
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+        .single();
+
       toast({
         title: 'Velkommen tilbake!',
         description: 'Du er nå logget inn.',
       });
 
-      navigate('/dashboard');
+      if (roleData?.role === 'investor') {
+        navigate('/aksjer');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         toast({
@@ -136,7 +147,8 @@ const Auth = () => {
         description: 'Du er nå logget inn.',
       });
 
-      navigate('/dashboard');
+      // New users are investors by default, redirect to stocks page
+      navigate('/aksjer');
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         toast({
