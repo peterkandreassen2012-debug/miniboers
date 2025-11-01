@@ -4,9 +4,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { Navbar } from '@/components/Navbar';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { TrendingUp, TrendingDown, Search } from 'lucide-react';
+import { TrendingUp, TrendingDown, Search, AlertCircle, Clock, Check, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useNavigate } from 'react-router-dom';
+import { CompanyApplicationForm } from '@/components/dashboard/CompanyApplicationForm';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 
 interface Investment {
   id: string;
@@ -42,13 +45,34 @@ const Portfolio = () => {
   const [publicPortfolios, setPublicPortfolios] = useState<PublicPortfolio[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const [companyApplication, setCompanyApplication] = useState<any>(null);
 
   useEffect(() => {
     if (user) {
       fetchMyPortfolio();
       fetchPublicPortfolios();
+      checkCompanyApplication();
     }
   }, [user]);
+
+  const checkCompanyApplication = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('company_applications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+      setCompanyApplication(data);
+    } catch (error) {
+      console.error('Error checking application:', error);
+    }
+  };
 
   const fetchMyPortfolio = async () => {
     try {
@@ -168,9 +192,10 @@ const Portfolio = () => {
       <div className="pt-20 pb-20 px-4">
         <div className="container mx-auto max-w-7xl">
           <Tabs defaultValue="my-portfolio" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-8">
+            <TabsList className="grid w-full grid-cols-3 mb-8">
               <TabsTrigger value="my-portfolio">Min portefølje</TabsTrigger>
               <TabsTrigger value="explore">Utforsk andre</TabsTrigger>
+              <TabsTrigger value="register-company">Registrer som bedrift</TabsTrigger>
             </TabsList>
 
             <TabsContent value="my-portfolio" className="space-y-6">
@@ -287,6 +312,69 @@ const Portfolio = () => {
                     </div>
                   </Card>
                 ))}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="register-company" className="space-y-6">
+              <div className="max-w-4xl mx-auto">
+                {companyApplication ? (
+                  <Card className="p-6">
+                    <div className="flex items-start justify-between mb-6">
+                      <div>
+                        <h2 className="text-2xl font-bold mb-2">Din bedriftssøknad</h2>
+                        <p className="text-muted-foreground">Følg statusen på søknaden din her</p>
+                      </div>
+                      <Badge
+                        variant={
+                          companyApplication.status === 'pending'
+                            ? 'secondary'
+                            : companyApplication.status === 'approved'
+                            ? 'default'
+                            : 'destructive'
+                        }
+                      >
+                        {companyApplication.status === 'pending' && <Clock className="h-3 w-3 mr-1" />}
+                        {companyApplication.status === 'approved' && <Check className="h-3 w-3 mr-1" />}
+                        {companyApplication.status === 'rejected' && <X className="h-3 w-3 mr-1" />}
+                        {companyApplication.status === 'pending' ? 'Venter' : companyApplication.status === 'approved' ? 'Godkjent' : 'Avvist'}
+                      </Badge>
+                    </div>
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Bedriftsnavn</p>
+                        <p className="font-semibold text-lg">{companyApplication.company_name}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Sendt</p>
+                        <p className="font-semibold">{new Date(companyApplication.created_at).toLocaleDateString('no-NO')}</p>
+                      </div>
+                      {companyApplication.status === 'approved' && (
+                        <div className="pt-4">
+                          <Button onClick={() => navigate('/dashboard')} size="lg" className="w-full">
+                            Gå til bedriftsdashboard
+                          </Button>
+                        </div>
+                      )}
+                      {companyApplication.rejection_reason && (
+                        <div className="pt-4">
+                          <div className="p-4 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg">
+                            <div className="flex items-start gap-2">
+                              <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
+                              <div>
+                                <p className="font-semibold text-red-900 dark:text-red-100">Avslåttsgrunn</p>
+                                <p className="text-sm text-red-700 dark:text-red-300 mt-1">{companyApplication.rejection_reason}</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                ) : (
+                  <CompanyApplicationForm onApplicationSubmitted={() => {
+                    checkCompanyApplication();
+                  }} />
+                )}
               </div>
             </TabsContent>
           </Tabs>
