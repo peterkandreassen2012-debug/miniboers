@@ -48,11 +48,17 @@ const Auth = () => {
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth-callback`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+          scopes: 'email profile',
         },
       });
 
       if (error) throw error;
     } catch (error: any) {
+      console.error('Google sign in error:', error);
       toast({
         title: 'Innlogging feilet',
         description: error.message || 'Kunne ikke logge inn med Google.',
