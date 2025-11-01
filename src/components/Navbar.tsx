@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu } from "lucide-react";
+import { Menu, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 
 export const Navbar = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -36,8 +36,9 @@ export const Navbar = () => {
 
         <div className="flex items-center gap-2 md:gap-3">
           {user ? (
-            <Button size="sm" variant="secondary" onClick={() => navigate('/dashboard')} className="touch-manipulation">
-              Dashboard
+            <Button size="sm" variant="ghost" onClick={signOut} className="touch-manipulation">
+              <LogOut className="h-4 w-4 mr-2" />
+              Logg ut
             </Button>
           ) : (
             <>
@@ -91,12 +92,13 @@ export const Navbar = () => {
                 {user ? (
                   <button 
                     onClick={() => {
-                      navigate('/dashboard');
+                      signOut();
                       setIsOpen(false);
                     }} 
-                    className="text-lg font-medium text-foreground hover:text-primary transition-colors text-left py-3 touch-manipulation"
+                    className="text-lg font-medium text-foreground hover:text-primary transition-colors text-left py-3 touch-manipulation flex items-center gap-2"
                   >
-                    Dashboard
+                    <LogOut className="h-5 w-5" />
+                    Logg ut
                   </button>
                 ) : (
                   <button 
