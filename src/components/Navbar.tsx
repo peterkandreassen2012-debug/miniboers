@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, LogOut } from "lucide-react";
+import { Menu, LogOut, HelpCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -9,6 +9,11 @@ export const Navbar = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+
+  const handleShowGuide = () => {
+    localStorage.removeItem('hasSeenOnboarding');
+    window.location.href = '/';
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-b border-border md:top-4 md:left-4 md:right-4 md:rounded-2xl md:border md:shadow-xl safe-top">
@@ -31,6 +36,10 @@ export const Navbar = () => {
           )}
           <button onClick={() => navigate('/hvordan-virker-det')} className="text-sm font-medium text-foreground hover:text-foreground/70 transition-colors">
             Hvordan det virker
+          </button>
+          <button onClick={handleShowGuide} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
+            <HelpCircle className="h-4 w-4" />
+            Guide
           </button>
         </div>
 
@@ -88,6 +97,16 @@ export const Navbar = () => {
                   className="text-lg font-medium text-foreground hover:text-primary transition-colors text-left py-3 touch-manipulation"
                 >
                   Hvordan det virker
+                </button>
+                <button 
+                  onClick={() => {
+                    handleShowGuide();
+                    setIsOpen(false);
+                  }} 
+                  className="text-lg font-medium text-muted-foreground hover:text-primary transition-colors text-left py-3 touch-manipulation flex items-center gap-2"
+                >
+                  <HelpCircle className="h-5 w-5" />
+                  Vis guide
                 </button>
                 {user ? (
                   <button 

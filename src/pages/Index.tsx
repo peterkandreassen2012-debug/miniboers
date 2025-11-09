@@ -1,14 +1,23 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/Navbar";
 import { HeroSection } from "@/components/HeroSection";
 import { StockList } from "@/components/StockList";
+import { Onboarding } from "@/components/Onboarding";
 
 const Index = () => {
   const navigate = useNavigate();
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
+    const checkOnboarding = () => {
+      const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding');
+      if (!hasSeenOnboarding) {
+        setShowOnboarding(true);
+      }
+    };
+
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       
@@ -28,11 +37,18 @@ const Index = () => {
       }
     };
 
+    checkOnboarding();
     checkSession();
   }, [navigate]);
 
+  const handleOnboardingComplete = () => {
+    localStorage.setItem('hasSeenOnboarding', 'true');
+    setShowOnboarding(false);
+  };
+
   return (
     <div className="min-h-screen bg-background">
+      {showOnboarding && <Onboarding onComplete={handleOnboardingComplete} />}
       <Navbar />
       <HeroSection />
       <StockList />
