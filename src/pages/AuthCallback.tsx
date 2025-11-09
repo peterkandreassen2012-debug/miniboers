@@ -11,7 +11,6 @@ const AuthCallback = () => {
       try {
         console.log('Auth callback started');
         
-        // Wait a bit for the session to be established
         await new Promise(resolve => setTimeout(resolve, 1000));
         
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -22,10 +21,21 @@ const AuthCallback = () => {
         if (session?.user) {
           console.log('User found:', session.user.id);
           
-          // Wait for the trigger to create the user_roles entry
+          // Check if user has a PIN
+          const { data: pinData } = await supabase
+            .from('user_pins')
+            .select('id')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+          
+          if (pinData) {
+            console.log('User has PIN, redirecting to PIN login');
+            navigate('/pin-login');
+            return;
+          }
+          
           await new Promise(resolve => setTimeout(resolve, 1500));
           
-          // Fetch user role with retry logic
           let roleData = null;
           let attempts = 0;
           const maxAttempts = 5;
@@ -50,7 +60,6 @@ const AuthCallback = () => {
             }
           }
 
-          // Redirect based on role
           if (roleData?.role === 'investor') {
             navigate('/portfolio');
           } else if (roleData?.role === 'company') {

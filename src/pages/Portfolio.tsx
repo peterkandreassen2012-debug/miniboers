@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { CompanyApplicationForm } from '@/components/dashboard/CompanyApplicationForm';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { PinSetup } from '@/components/PinSetup';
 
 interface Investment {
   id: string;
@@ -46,14 +47,38 @@ const Portfolio = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [companyApplication, setCompanyApplication] = useState<any>(null);
+  const [showPinSetup, setShowPinSetup] = useState(false);
+  const [hasPin, setHasPin] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (user) {
+      checkPinStatus();
       fetchMyPortfolio();
       fetchPublicPortfolios();
       checkCompanyApplication();
     }
   }, [user]);
+
+  const checkPinStatus = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('user_pins')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error && error.code === 'PGRST116') {
+        setHasPin(false);
+        setShowPinSetup(true);
+      } else if (data) {
+        setHasPin(true);
+      }
+    } catch (error) {
+      console.error('Error checking PIN:', error);
+    }
+  };
 
   const checkCompanyApplication = async () => {
     if (!user) return;
@@ -188,6 +213,15 @@ const Portfolio = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {showPinSetup && user && (
+        <PinSetup 
+          userId={user.id} 
+          onComplete={() => {
+            setShowPinSetup(false);
+            setHasPin(true);
+          }} 
+        />
+      )}
       <Navbar />
       <div className="pt-20 pb-20 px-4">
         <div className="container mx-auto max-w-7xl">
