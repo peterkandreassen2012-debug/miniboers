@@ -18,15 +18,23 @@ export const Navbar = () => {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-b border-border md:top-4 md:left-4 md:right-4 md:rounded-2xl md:border md:shadow-xl safe-top">
       <div className="container mx-auto px-4 md:px-6 h-16 flex items-center justify-between touch-manipulation">
-        <div className="flex items-center gap-2 cursor-pointer touch-manipulation" onClick={() => {
-          navigate('/');
-          setIsOpen(false);
-        }}>
+        <div 
+          className="flex items-center gap-2 cursor-pointer touch-manipulation" 
+          onClick={() => {
+            navigate('/');
+            setIsOpen(false);
+          }}
+          data-tutorial="logo"
+        >
           <span className="text-xl md:text-2xl font-bold text-foreground">Minibørs</span>
         </div>
         
         <div className="hidden md:flex items-center gap-8">
-          <button onClick={() => navigate('/aksjer')} className="text-sm font-medium text-foreground hover:text-foreground/70 transition-colors">
+          <button 
+            onClick={() => navigate('/aksjer')} 
+            className="text-sm font-medium text-foreground hover:text-foreground/70 transition-colors"
+            data-tutorial="marketplace"
+          >
             Markedsplass
           </button>
           {user && (
@@ -43,7 +51,7 @@ export const Navbar = () => {
           </button>
         </div>
 
-        <div className="flex items-center gap-2 md:gap-3">
+        <div className="flex items-center gap-2 md:gap-3" data-tutorial="auth">
           {user ? (
             <Button size="sm" variant="ghost" onClick={signOut} className="touch-manipulation">
               <LogOut className="h-4 w-4 mr-2" />

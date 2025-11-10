@@ -62,6 +62,7 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
   const handleComplete = () => {
     setIsVisible(false);
     setTimeout(() => {
+      localStorage.setItem('startTutorial', 'true');
       onComplete();
     }, 300);
   };

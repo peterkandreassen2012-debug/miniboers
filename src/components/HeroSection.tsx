@@ -7,7 +7,7 @@ export const HeroSection = () => {
 
   return (
     <>
-      <section className="pt-24 md:pt-32 pb-12 md:pb-20 px-4 safe-top">
+      <section className="pt-24 md:pt-32 pb-12 md:pb-20 px-4 safe-top" data-tutorial="hero">
         <div className="container mx-auto">
           <div className="max-w-4xl mx-auto text-center space-y-6 md:space-y-8">
             <div className="inline-flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 rounded-full bg-primary/10 border border-primary/20 text-xs md:text-sm font-medium text-primary">
