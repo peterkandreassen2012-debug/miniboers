@@ -42,55 +42,55 @@ export const StockList = () => {
   };
 
   return (
-    <section id="aksjer" className="py-20 px-4 bg-muted/30" data-tutorial="stocks">
+    <section id="aksjer" className="py-12 md:py-20 px-4 bg-muted/30" data-tutorial="stocks">
       <div className="container mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+        <div className="text-center mb-8 md:mb-12 px-2">
+          <h2 className="text-2xl md:text-4xl font-bold mb-3 md:mb-4">
             Tilgjengelige aksjer
           </h2>
-          <p className="text-muted-foreground text-lg">
+          <p className="text-muted-foreground text-sm md:text-lg">
             Utforsk vårt utvalg av håndplukkede private aksjer
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 max-w-7xl mx-auto">
           {loading ? (
-            <p className="col-span-full text-center text-muted-foreground">Laster aksjer...</p>
+            <p className="col-span-full text-center text-muted-foreground text-sm">Laster aksjer...</p>
           ) : stocks.length === 0 ? (
-            <p className="col-span-full text-center text-muted-foreground">Ingen aksjer tilgjengelig for øyeblikket</p>
+            <p className="col-span-full text-center text-muted-foreground text-sm">Ingen aksjer tilgjengelig for øyeblikket</p>
           ) : (
             stocks.map((stock) => (
-              <Card key={stock.id} className="p-6 hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate('/auth')}>
-                <div className="space-y-4">
+              <Card key={stock.id} className="p-4 md:p-6 hover:shadow-lg transition-shadow cursor-pointer touch-manipulation" onClick={() => navigate('/auth')}>
+                <div className="space-y-3 md:space-y-4">
                   <div className="flex items-start justify-between">
                     {stock.logo_url ? (
                       <img
                         src={stock.logo_url}
                         alt={stock.name}
-                        className="h-12 w-12 rounded-lg object-cover"
+                        className="h-10 w-10 md:h-12 md:w-12 rounded-lg object-cover flex-shrink-0"
                       />
                     ) : (
-                      <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <TrendingUp className="h-6 w-6 text-primary" />
+                      <div className="h-10 w-10 md:h-12 md:w-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <TrendingUp className="h-5 w-5 md:h-6 md:w-6 text-primary" />
                       </div>
                     )}
                   </div>
 
-                  <div>
-                    <h3 className="font-semibold text-lg mb-1">{stock.name}</h3>
-                    <p className="text-sm text-muted-foreground">{stock.sector}</p>
+                  <div className="min-w-0">
+                    <h3 className="font-semibold text-base md:text-lg mb-1 truncate">{stock.name}</h3>
+                    <p className="text-xs md:text-sm text-muted-foreground truncate">{stock.sector}</p>
                   </div>
 
-                  <div className="pt-4 border-t border-border">
+                  <div className="pt-3 md:pt-4 border-t border-border">
                     <div className="flex items-baseline gap-2 mb-2">
-                      <span className="text-2xl font-bold">{Number(stock.price).toFixed(2)}</span>
-                      <span className="text-sm text-muted-foreground">NOK</span>
+                      <span className="text-xl md:text-2xl font-bold">{Number(stock.price).toFixed(2)}</span>
+                      <span className="text-xs md:text-sm text-muted-foreground">NOK</span>
                     </div>
-                    <p className="text-xs text-muted-foreground mb-4">
+                    <p className="text-xs text-muted-foreground mb-3 md:mb-4">
                       {stock.available_shares.toLocaleString()} aksjer tilgjengelig
                     </p>
 
-                    <Button className="w-full" variant="outline">
+                    <Button className="w-full text-xs md:text-sm" variant="outline" size="sm">
                       Se detaljer
                     </Button>
                   </div>
@@ -100,8 +100,8 @@ export const StockList = () => {
           )}
         </div>
 
-        <div className="text-center mt-12">
-          <Button size="lg" variant="outline" onClick={() => navigate('/auth')}>
+        <div className="text-center mt-8 md:mt-12">
+          <Button size="default" variant="outline" onClick={() => navigate('/auth')} className="text-xs md:text-base touch-manipulation">
             Se alle aksjer
           </Button>
         </div>

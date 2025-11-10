@@ -16,17 +16,17 @@ export const Navbar = () => {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-b border-border md:top-4 md:left-4 md:right-4 md:rounded-2xl md:border md:shadow-xl safe-top">
-      <div className="container mx-auto px-4 md:px-6 h-16 flex items-center justify-between touch-manipulation">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-b border-border md:top-4 md:left-4 md:right-4 md:rounded-2xl md:border md:shadow-xl">
+      <div className="container mx-auto px-3 md:px-6 h-14 md:h-16 flex items-center justify-between touch-manipulation">
         <div 
-          className="flex items-center gap-2 cursor-pointer touch-manipulation" 
+          className="flex items-center gap-2 cursor-pointer touch-manipulation flex-shrink-0" 
           onClick={() => {
             navigate('/');
             setIsOpen(false);
           }}
           data-tutorial="logo"
         >
-          <span className="text-xl md:text-2xl font-bold text-foreground">Minibørs</span>
+          <span className="text-lg md:text-2xl font-bold text-foreground whitespace-nowrap">Minibørs</span>
         </div>
         
         <div className="hidden md:flex items-center gap-8">
@@ -51,19 +51,19 @@ export const Navbar = () => {
           </button>
         </div>
 
-        <div className="flex items-center gap-2 md:gap-3" data-tutorial="auth">
+        <div className="flex items-center gap-1.5 md:gap-3 flex-shrink-0" data-tutorial="auth">
           {user ? (
-            <Button size="sm" variant="ghost" onClick={signOut} className="touch-manipulation">
-              <LogOut className="h-4 w-4 mr-2" />
-              Logg ut
+            <Button size="sm" variant="ghost" onClick={signOut} className="touch-manipulation text-xs md:text-sm">
+              <LogOut className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
+              <span className="hidden sm:inline">Logg ut</span>
             </Button>
           ) : (
             <>
-              <Button variant="ghost" size="sm" onClick={() => navigate('/auth')} className="hidden sm:flex touch-manipulation">
+              <Button variant="ghost" size="sm" onClick={() => navigate('/auth')} className="hidden sm:flex touch-manipulation text-xs md:text-sm">
                 Logg inn
               </Button>
-              <Button size="sm" variant="default" onClick={() => navigate('/auth')} className="touch-manipulation">
-                Registrer deg
+              <Button size="sm" variant="default" onClick={() => navigate('/auth')} className="touch-manipulation text-xs md:text-sm whitespace-nowrap">
+                Registrer
               </Button>
             </>
           )}

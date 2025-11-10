@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { X, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { DialogTitle } from '@/components/ui/dialog';
 
 interface TutorialProps {
   onComplete: () => void;
@@ -172,7 +173,7 @@ export const Tutorial = ({ onComplete }: TutorialProps) => {
 
       {/* Tooltip */}
       <div
-        className="fixed z-[101] pointer-events-auto"
+        className="fixed z-[101] pointer-events-auto px-4"
         style={{
           top: tooltipPosition.top,
           left: tooltipPosition.left,
@@ -185,32 +186,33 @@ export const Tutorial = ({ onComplete }: TutorialProps) => {
             : 'translate(0, -50%)',
         }}
       >
-        <div className="bg-card border border-border rounded-xl shadow-2xl p-6 max-w-sm animate-scale-in">
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex-1">
-              <h3 className="text-lg font-bold text-foreground mb-2">
+        <div className="bg-card border border-border rounded-xl shadow-2xl p-4 md:p-6 max-w-[90vw] md:max-w-sm animate-scale-in">
+          <DialogTitle className="sr-only">Tutorial Steg {currentStep + 1}</DialogTitle>
+          <div className="flex items-start justify-between gap-2 mb-3">
+            <div className="flex-1 min-w-0">
+              <h3 className="text-base md:text-lg font-bold text-foreground mb-2 break-words">
                 {tutorialSteps[currentStep].title}
               </h3>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs md:text-sm text-muted-foreground break-words">
                 {tutorialSteps[currentStep].description}
               </p>
             </div>
             <button
               onClick={handleSkip}
-              className="ml-2 p-1 rounded-full hover:bg-muted transition-colors"
+              className="flex-shrink-0 p-1 rounded-full hover:bg-muted transition-colors touch-manipulation"
               aria-label="Hopp over"
             >
               <X className="h-4 w-4 text-muted-foreground" />
             </button>
           </div>
 
-          <div className="flex items-center justify-between mt-4">
-            <span className="text-xs text-muted-foreground">
+          <div className="flex items-center justify-between mt-4 gap-4">
+            <span className="text-xs text-muted-foreground whitespace-nowrap">
               {currentStep + 1} av {tutorialSteps.length}
             </span>
-            <Button onClick={handleNext} size="sm" className="gap-2">
-              {currentStep === tutorialSteps.length - 1 ? 'Fullfør' : 'Neste'}
-              <ChevronRight className="h-4 w-4" />
+            <Button onClick={handleNext} size="sm" className="gap-1 md:gap-2 touch-manipulation">
+              <span className="text-xs md:text-sm">{currentStep === tutorialSteps.length - 1 ? 'Fullfør' : 'Neste'}</span>
+              <ChevronRight className="h-3 w-3 md:h-4 md:w-4" />
             </Button>
           </div>
         </div>
